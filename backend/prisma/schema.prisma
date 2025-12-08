@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  avatar        String?
+  phone         String?
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  vehicles      Vehicle[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  vehicleViews     VehicleView[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+}
+
+model Vehicle {
+  id             String          @id @default(uuid())
+  make           String
+  model          String
+  year           Int
+  vin            String          @unique
+  condition      Condition
+  purchaseDate   DateTime
+  initialMileage Int
+  currentMileage Int
+  price          Decimal         @db.Decimal(10, 2)
+  description    String          @db.Text
+  images         String[]
+  features       String[]
+  fuelType       String?
+  transmission   String?
+  engine         String?
+  color          String?
+  location       String
+  status         Status          @default(DRAFT)
+  views          Int             @default(0)
+  mechanicCertified Boolean      @default(false)
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timelineEvents TimelineEvent[]
+  messages       Message[]
+  vehicleViews   VehicleView[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([make, model])
+  @@index([year])
+  @@index([price])
+  @@index([status])
+  @@index([userId])
+}
+
+model TimelineEvent {
+  id          String    @id @default(uuid())
+  vehicleId   String
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  date        DateTime
+  mileage     Int
+  eventType   EventType
+  title       String
+  description String    @db.Text
+  cost        Decimal?  @db.Decimal(10, 2)
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([vehicleId])
+  @@index([eventType])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String   @db.Text
+  subject    String?
+  isRead     Boolean  @default(false)
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  vehicleId  String?
+  vehicle    Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([vehicleId])
+}
+
+model VehicleView {
+  id         String   @id @default(uuid())
+  userId     String
+  vehicleId  String
+  viewedAt   DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vehicleId])
+  @@index([vehicleId])
+  @@index([userId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Condition {
+  NEW
+  USED
+  CERTIFIED_PRE_OWNED
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+  SOLD
+  ARCHIVED
+}
+
+enum EventType {
+  PURCHASE
+  MAINTENANCE
+  UPGRADE
+  ACCIDENT
+  REPAIR
+  PARTS_REPLACED
+}
