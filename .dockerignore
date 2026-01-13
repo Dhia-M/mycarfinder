@@ -1,0 +1,27 @@
+# Root level dockerignore
+.git
+.gitignore
+*.md
+!README.md
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (included in each service)
+**/node_modules
+**/dist
+**/build
+
+# Logs
+**/logs
+**/*.log
